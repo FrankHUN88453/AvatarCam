@@ -1,2 +1,2 @@
 #pragma once
-#define AVATARCAM_VERSION "0.1"
+#define AVATARCAM_VERSION "0.1.1"

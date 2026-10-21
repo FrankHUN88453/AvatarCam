@@ -91,27 +91,27 @@ void lightPresets(Settings& s, int which) {
             s.resetLights();
             break;
         case 1:  // neon
-            add(T("Purple"), 0, {0.75f, 0.35f, 1.0f}, 1.2f, 55, 20, true);
-            add(T("Cyan"), 0, {0.2f, 0.85f, 1.0f}, 1.1f, -60, 15, false);
-            add(T("Pink rim"), 0, {1.0f, 0.3f, 0.7f}, 1.4f, 170, 30, false);
+            add("Purple", 0, {0.75f, 0.35f, 1.0f}, 1.2f, 55, 20, true);
+            add("Cyan", 0, {0.2f, 0.85f, 1.0f}, 1.1f, -60, 15, false);
+            add("Pink rim", 0, {1.0f, 0.3f, 0.7f}, 1.4f, 170, 30, false);
             s.effects.ambientSky = {0.35f, 0.3f, 0.55f};
             s.effects.ambientGround = {0.15f, 0.1f, 0.25f};
             break;
         case 2:  // naplemente
-            add(T("Sun"), 0, {1.0f, 0.62f, 0.35f}, 1.6f, 70, 12, true);
-            add(T("Sky"), 0, {0.45f, 0.55f, 0.9f}, 0.5f, -50, 40, false);
-            add(T("Rim"), 0, {1.0f, 0.5f, 0.3f}, 1.0f, -160, 20, false);
+            add("Sun", 0, {1.0f, 0.62f, 0.35f}, 1.6f, 70, 12, true);
+            add("Sky", 0, {0.45f, 0.55f, 0.9f}, 0.5f, -50, 40, false);
+            add("Rim", 0, {1.0f, 0.5f, 0.3f}, 1.0f, -160, 20, false);
             s.effects.ambientSky = {0.6f, 0.55f, 0.7f};
             s.effects.ambientGround = {0.4f, 0.28f, 0.22f};
             break;
         case 3:  // drámai
-            add(T("Key"), 0, {1.0f, 0.95f, 0.9f}, 2.0f, 75, 45, true);
-            add(T("Rim"), 0, {0.6f, 0.75f, 1.0f}, 1.5f, -150, 25, false);
+            add("Key", 0, {1.0f, 0.95f, 0.9f}, 2.0f, 75, 45, true);
+            add("Rim", 0, {0.6f, 0.75f, 1.0f}, 1.5f, -150, 25, false);
             s.effects.ambientSky = {0.25f, 0.27f, 0.32f};
             s.effects.ambientGround = {0.1f, 0.1f, 0.12f};
             break;
         case 4:  // lapos (VRChat-szerű egyenletes)
-            add(T("Front"), 0, {1, 1, 1}, 0.9f, 0, 20, false);
+            add("Front", 0, {1, 1, 1}, 0.9f, 0, 20, false);
             s.effects.ambientSky = {0.9f, 0.9f, 0.95f};
             s.effects.ambientGround = {0.75f, 0.75f, 0.8f};
             s.effects.ambientIntensity = 0.75f;
@@ -226,8 +226,12 @@ void App::uiPreview() {
     ImVec2 p0(cur.x + (avail.x - size.x) * 0.5f, cur.y + (avail.y - size.y) * 0.5f);
     ImVec2 p1(p0.x + size.x, p0.y + size.y);
     ImDrawList* dl = ImGui::GetWindowDrawList();
-    // sakktábla az átlátszósághoz
-    if (settings.background.mode == 0) {
+    // ha a kimeneti ablak nyitva van, a kép csak ott látszik (itt nem duplikáljuk); az egérrel itt is lehet forgatni
+    bool inOutputWindow = settings.output.outputWindow && outHwnd;
+    if (inOutputWindow) {
+        dl->AddRectFilled(p0, p1, IM_COL32(24, 26, 32, 255));
+    } else if (settings.background.mode == 0) {
+        // sakktábla az átlátszósághoz
         float cs = 16 * uiScale;
         dl->PushClipRect(p0, p1, true);
         for (float y = p0.y; y < p1.y; y += cs)
@@ -237,7 +241,7 @@ void App::uiPreview() {
             }
         dl->PopClipRect();
     }
-    if (renderer.output().srv) dl->AddImage(texRef(renderer.output().srv.Get()), p0, p1);
+    if (renderer.output().srv && !inOutputWindow) dl->AddImage(texRef(renderer.output().srv.Get()), p0, p1);
     dl->AddRect(p0, p1, IM_COL32(60, 70, 90, 255));
     (void)top;
 
@@ -277,7 +281,7 @@ void App::uiPreview() {
         return true;
     };
     int li = 0;
-    for (size_t i = 0; i < settings.lights.size(); i++) {
+    for (size_t i = 0; i < settings.lights.size() && !inOutputWindow; i++) {
         auto& L = settings.lights[i];
         if (!L.enabled) continue;
         Vec3 center = camera.target;
@@ -297,6 +301,14 @@ void App::uiPreview() {
         ImVec2 mid((p0.x + p1.x) * 0.5f, (p0.y + p1.y) * 0.5f);
         ImGui::SetCursorScreenPos(ImVec2(mid.x - 150 * uiScale, mid.y - 12 * uiScale));
         ImGui::ProgressBar(loadProgress, ImVec2(300 * uiScale, 0), T("Loading avatar…"));
+    } else if (inOutputWindow) {
+        ImVec2 mid((p0.x + p1.x) * 0.5f, (p0.y + p1.y) * 0.5f);
+        const char* l1 = T("The image is shown in the output window (OBS).");
+        const char* l2 = T("You can still orbit, pan and zoom the camera here with the mouse.");
+        ImVec2 s1 = ImGui::CalcTextSize(l1), s2 = ImGui::CalcTextSize(l2);
+        float gap = 6 * uiScale;
+        dl->AddText(ImVec2(mid.x - s1.x * 0.5f, mid.y - s1.y - gap * 0.5f), IM_COL32(200, 210, 225, 255), l1);
+        dl->AddText(ImVec2(mid.x - s2.x * 0.5f, mid.y + gap * 0.5f), IM_COL32(140, 150, 170, 255), l2);
     } else if (!avatar) {
         ImVec2 mid((p0.x + p1.x) * 0.5f, (p0.y + p1.y) * 0.5f);
         const char* t = T("Drop a .unitypackage / .vrm / .fbx / .glb file here to import it");
@@ -666,8 +678,10 @@ void App::uiSceneTab() {
             ImVec4 lc(L.color.x, L.color.y, L.color.z, 1);
             ImGui::ColorButton("##c", lc, ImGuiColorEditFlags_NoTooltip, ImVec2(ImGui::GetFrameHeight(), ImGui::GetFrameHeight()));
             ImGui::SameLine();
-            if (ImGui::TreeNodeEx(format("%d. %s###l", (int)i + 1, L.name.c_str()).c_str(), ImGuiTreeNodeFlags_SpanAvailWidth)) {
-                ImGui::InputText(T("Name"), &L.name);
+            if (ImGui::TreeNodeEx(format("%d. %s###l", (int)i + 1, T(L.name.c_str())).c_str(), ImGuiTreeNodeFlags_SpanAvailWidth)) {
+                // az alapértelmezett nevek angol kulcsok: a mezőben is az aktuális nyelven látszanak
+                std::string shown = T(L.name.c_str());
+                if (ImGui::InputText(T("Name"), &shown)) L.name = shown;
                 const char* types[] = {T("Directional (sun)"), T("Point"), "Spot"};
                 ImGui::Combo(T("Type"), &L.type, types, 3);
                 color3(T("Color"), L.color);
@@ -694,13 +708,13 @@ void App::uiSceneTab() {
         if (settings.lights.size() < 8) {
             if (ImGui::Button(T("+ Directional"))) {
                 LightSettings l;
-                l.name = T("New light");
+                l.name = "New light";
                 settings.lights.push_back(l);
             }
             ImGui::SameLine();
             if (ImGui::Button(T("+ Point"))) {
                 LightSettings l;
-                l.name = T("Point light");
+                l.name = "Point light";
                 l.type = 1;
                 l.intensity = 2.5f;
                 l.position = {0.6f, 1.6f, 0.8f};
@@ -710,7 +724,7 @@ void App::uiSceneTab() {
             ImGui::SameLine();
             if (ImGui::Button("+ Spot")) {
                 LightSettings l;
-                l.name = T("Spot light");
+                l.name = "Spot light";
                 l.type = 2;
                 l.intensity = 3;
                 l.position = {0, 2.5f, 1.2f};

@@ -18,6 +18,13 @@ static void to_json(json& j, const LightSettings& s) {
 }
 static void from_json(const json& j, LightSettings& s) {
     G(name) G(type) G(enabled) G(color) G(intensity) G(yaw) G(pitch) G(position) G(range) G(spotAngle) G(spotSoftness) G(shadow) G(followCamera)
+    // a régebbi (csak magyar) változat alapértelmezett fénynevei -> angol kulcs, amit a felület az aktuális nyelven mutat
+    static const std::pair<const char*, const char*> oldNames[] = {
+        {"Fő fény", "Key light"}, {"Derítő", "Fill light"}, {"Hátsó (kontúr)", "Back (rim)"}, {"Lila", "Purple"}, {"Cián", "Cyan"},
+        {"Rózsaszín kontúr", "Pink rim"}, {"Nap", "Sun"}, {"Égbolt", "Sky"}, {"Kontúr", "Rim"}, {"Fő", "Key"}, {"Elöl", "Front"},
+        {"Új fény", "New light"}, {"Pontfény", "Point light"}, {"Spotfény", "Spot light"}};
+    for (auto& [hu, en] : oldNames)
+        if (s.name == hu) s.name = en;
 }
 static void to_json(json& j, const BackgroundSettings& s) { j = {F(mode), F(color), F(color2), F(gradientAngle), F(image), F(imageFit), F(imageDim), F(chroma)}; }
 static void from_json(const json& j, BackgroundSettings& s) { G(mode) G(color) G(color2) G(gradientAngle) G(image) G(imageFit) G(imageDim) G(chroma) }
@@ -74,7 +81,7 @@ Settings::Settings() { resetLights(); }
 void Settings::resetLights() {
     lights.clear();
     LightSettings key;
-    key.name = T("Key light");
+    key.name = "Key light";
     key.yaw = 30;
     key.pitch = 35;
     key.intensity = 1.6f;
@@ -82,14 +89,14 @@ void Settings::resetLights() {
     key.shadow = true;
     lights.push_back(key);
     LightSettings fill;
-    fill.name = T("Fill light");
+    fill.name = "Fill light";
     fill.yaw = -45;
     fill.pitch = 15;
     fill.intensity = 0.45f;
     fill.color = {0.7f, 0.8f, 1.0f};
     lights.push_back(fill);
     LightSettings rim;
-    rim.name = T("Back (rim)");
+    rim.name = "Back (rim)";
     rim.yaw = 160;
     rim.pitch = 25;
     rim.intensity = 1.2f;

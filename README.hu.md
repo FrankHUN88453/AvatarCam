@@ -57,6 +57,9 @@ Az előnézetben: bal egérgomb = forgatás, jobb/középső = mozgatás, görg�
 A kimeneti ablak akkor is folyamatosan ad képet, ha alt+tabbal elváltasz, vagy a játék van előtte. Kis méretre nem tehető
 (ha mégis, pl. Win+D, magától visszaáll), és nincs rajta egérmutató. Egérrel húzható, jobb klikkre bezárul.
 
+Amíg a kimeneti ablak be van kapcsolva, a fő ablakban nem látszik az avatár (a kép csak a kimeneti ablakban van);
+a kamerát ott is forgathatod, mozgathatod és nagyíthatod az egérrel.
+
 Ne a fő AvatarCam ablakot rögzítsd: azon a felület is látszik, kis méretre téve nem ad képet, és az egér is rákerülhet.
 
 **B) Spout2** – a leggyorsabb, teljesen átlátszó kapcsolat; az OBS-hez a *Spout2 Plugin for OBS* bővítmény kell.

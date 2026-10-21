@@ -57,6 +57,9 @@ In the preview: left mouse = orbit, right/middle = pan, wheel = zoom, double-cli
 The output window keeps delivering frames even when you alt+tab away or the game is in front of it. It can't be minimized
 (if it is, e.g. with Win+D, it restores itself) and it has no mouse cursor. Drag it with the mouse; right-click closes it.
 
+While the output window is on, the main window doesn't show the avatar (the image is only in the output window);
+you can still orbit, pan and zoom the camera there with the mouse.
+
 Don't capture the main AvatarCam window: it shows the UI too, gives no image while minimized, and the mouse can appear on it.
 
 **B) Spout2** – the fastest connection with full transparency; OBS needs the *Spout2 Plugin for OBS*.

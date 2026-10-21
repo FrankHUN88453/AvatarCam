@@ -369,3 +369,5 @@
 {"The microphone could not be opened", "A mikrofon nem nyitható meg"},
 {"Waiting on port %d…", "Várakozás a %d porton…"},
 {"Image##out", "Kép##out"},
+{"The image is shown in the output window (OBS).", "A kép a kimeneti ablakban látszik (OBS)."},
+{"You can still orbit, pan and zoom the camera here with the mouse.", "A kamerát itt is forgathatod, mozgathatod és nagyíthatod az egérrel."},
