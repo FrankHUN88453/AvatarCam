@@ -1,0 +1,12 @@
+# build output
+build/
+bin/*
+!bin/licenses/
+
+# personal data – never commit
+settings.json
+imgui.ini
+avatarcam.log
+*.dmp
+avatars/
+presets/

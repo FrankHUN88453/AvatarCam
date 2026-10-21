@@ -1,0 +1,13 @@
+[submodule "external/imgui"]
+	path = external/imgui
+	url = https://github.com/ocornut/imgui.git
+	branch = docking
+[submodule "external/ufbx"]
+	path = external/ufbx
+	url = https://github.com/ufbx/ufbx.git
+[submodule "external/stb"]
+	path = external/stb
+	url = https://github.com/nothings/stb.git
+[submodule "external/cgltf"]
+	path = external/cgltf
+	url = https://github.com/jkuhlmann/cgltf.git
