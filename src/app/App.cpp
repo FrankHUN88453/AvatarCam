@@ -460,6 +460,8 @@ void App::setupStyle(float scale) {
 
 int App::run(HINSTANCE hInst, const std::vector<std::wstring>& args) {
     timeBeginPeriod(1);
+    // a telepítő (AppMutex) ebből látja, hogy a program fut
+    CreateMutexW(nullptr, FALSE, L"AvatarCamRunning");
     ImGui_ImplWin32_EnableDpiAwareness();
     float dpi = ImGui_ImplWin32_GetDpiScaleForMonitor(MonitorFromPoint(POINT{0, 0}, MONITOR_DEFAULTTOPRIMARY));
     // teszteléshez külön beállításfájl: --settings <fájl>
@@ -544,6 +546,9 @@ int App::run(HINSTANCE hInst, const std::vector<std::wstring>& args) {
     else if (!settings.avatarId.empty() && fs::exists(avatarsDir() / u8path(settings.avatarId) / L"avatar.json")) loadAvatar(settings.avatarId);
     else if (!avatarList.empty()) loadAvatar(avatarList[0].id);
 
+    // új verzió keresése a háttérben, kicsit később, hogy az indulást ne lassítsa
+    if (settings.checkUpdates) updater->checkAsync(3.0);
+
     // tesztelés: --screenshot <fájl> <másodperc>
     std::wstring shotPath;
     double shotAt = 0;
@@ -624,6 +629,7 @@ int App::run(HINSTANCE hInst, const std::vector<std::wstring>& args) {
         }
     }
     if (frameTimer) CloseHandle(frameTimer);
+    updater->shutdown();
     autosave(true);
     destroyOutputWindow();
     ImGui_ImplDX11_Shutdown();

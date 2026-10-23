@@ -10,3 +10,6 @@ avatarcam.log
 *.dmp
 avatars/
 presets/
+
+# release output
+dist/

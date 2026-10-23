@@ -71,7 +71,9 @@ std::string Tracking::vmcStatus() const {
     if (!vmc_->running()) return T("Not enabled");
     return vmc_->active() ? vmc_->status : format(T("Waiting for data…"));
 }
-float Tracking::micLevel() const { return mic_->rawLevel() * 8.0f; }
+float Tracking::micLevel() const { return mic_->running() ? mic_->rawLevel() : 0.0f; }
+float Tracking::micGain() const { return mic_->running() ? mic_->currentGain() : 0.0f; }
+float Tracking::micGate() const { return mic_->running() ? mic_->currentGate() : 0.0f; }
 
 void Tracking::recenter() { wantRecenter_ = true; }
 
@@ -137,7 +139,7 @@ void Tracking::update(const TrackingSettings& s, Gfx& gfx, float dt) {
                 gMicStart.busy = false;
             });
         }
-        mic_->setParams(s.micGain, s.micThreshold);
+        mic_->setParams(s.micGain, s.micThreshold, s.micAutoGain, s.micMouth);
     } else if (mic_->running() && !gMicStart.busy) {
         mic_->stop();
         gMicStart.key.clear();

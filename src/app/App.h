@@ -9,6 +9,7 @@
 #include "gfx/Gfx.h"
 #include "render/Renderer.h"
 #include "render/GpuTimer.h"
+#include "app/Updater.h"
 #include "app/Settings.h"
 #include "import/Importer.h"
 #include "avatar/Avatar.h"
@@ -136,6 +137,10 @@ public:
     void uiBackground();  // háttér beállítások (a Jelenet és a Kimenet fülön is)
     void uiPreview();
     void uiImportPopup();
+    void uiUpdatePopup();
+    // frissítés: a hálózati szál a program végéig élhet, ezért az objektumot szándékosan nem töröljük
+    Updater* updater = new Updater;
+    bool updatePopupWanted = false, updateManualCheck = false, updateInstalling = false;
     void uiMenu(const json& menu, int depth);
     std::unordered_map<std::string, GpuTextureRef> iconCache;
     ID3D11ShaderResourceView* icon(const std::string& rel);

@@ -116,6 +116,8 @@ struct TrackingSettings {
     bool micEnabled = false;
     std::string micName;
     float micGain = 1.0f, micThreshold = 0.015f;
+    bool micAutoGain = false;  // automatikus erősítés a beszéd szintjéhez
+    float micMouth = 1.0f;     // szájnyitás mértéke
     bool vmcEnabled = false;
     int vmcPort = 39539;
     bool showCamera = false;
@@ -155,6 +157,8 @@ struct Hotkey {
 
 struct Settings {
     std::string avatarId;
+    bool checkUpdates = true;    // indításkor új verzió keresése
+    std::string skippedVersion;  // ezt a verziót a felhasználó kihagyta
     BackgroundSettings background;
     std::vector<LightSettings> lights;
     CameraSettings camera;

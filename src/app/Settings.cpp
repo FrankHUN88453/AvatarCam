@@ -63,11 +63,11 @@ static void from_json(const json& j, PoseSettings& s) {
 }
 static void to_json(json& j, const TrackingSettings& s) {
     j = {F(faceEnabled), F(handEnabled), F(handSmoothing), F(handMirror), F(cameraName), F(cameraIndex), F(cameraWidth), F(cameraHeight), F(mirror), F(smoothing), F(headScale), F(bodyFollow), F(eyeTracking),
-         F(mouthTracking), F(blinkTracking), F(blinkThreshold), F(micEnabled), F(micName), F(micGain), F(micThreshold), F(vmcEnabled), F(vmcPort), F(showCamera)};
+         F(mouthTracking), F(blinkTracking), F(blinkThreshold), F(micEnabled), F(micName), F(micGain), F(micThreshold), F(micAutoGain), F(micMouth), F(vmcEnabled), F(vmcPort), F(showCamera)};
 }
 static void from_json(const json& j, TrackingSettings& s) {
     G(faceEnabled) G(handEnabled) G(handSmoothing) G(handMirror) G(cameraName) G(cameraIndex) G(cameraWidth) G(cameraHeight) G(mirror) G(smoothing) G(headScale) G(bodyFollow) G(eyeTracking) G(mouthTracking)
-    G(blinkTracking) G(blinkThreshold) G(micEnabled) G(micName) G(micGain) G(micThreshold) G(vmcEnabled) G(vmcPort) G(showCamera)
+    G(blinkTracking) G(blinkThreshold) G(micEnabled) G(micName) G(micGain) G(micThreshold) G(micAutoGain) G(micMouth) G(vmcEnabled) G(vmcPort) G(showCamera)
 }
 static void to_json(json& j, const MaterialOverride& s) { j = {F(tint), F(hue), F(saturation), F(brightness), F(emissiveOverride), F(emissive), F(emissiveBoost), F(opacity)}; }
 static void from_json(const json& j, MaterialOverride& s) { G(tint) G(hue) G(saturation) G(brightness) G(emissiveOverride) G(emissive) G(emissiveBoost) G(opacity) }
@@ -120,10 +120,10 @@ void Settings::sceneFromJson(const json& j) {
 }
 
 void to_json(json& j, const Settings& s) {
-    j = {F(avatarId), F(background), F(lights), F(camera), F(effects), F(output), F(pose), F(tracking), F(avatars), F(hotkeys), F(uiScale), F(language), F(showPreview)};
+    j = {F(avatarId), F(background), F(lights), F(camera), F(effects), F(output), F(pose), F(tracking), F(avatars), F(hotkeys), F(uiScale), F(language), F(checkUpdates), F(skippedVersion), F(showPreview)};
 }
 void from_json(const json& j, Settings& s) {
-    G(avatarId) G(background) G(lights) G(camera) G(effects) G(output) G(pose) G(tracking) G(avatars) G(hotkeys) G(uiScale) G(language) G(showPreview)
+    G(avatarId) G(background) G(lights) G(camera) G(effects) G(output) G(pose) G(tracking) G(avatars) G(hotkeys) G(uiScale) G(language) G(checkUpdates) G(skippedVersion) G(showPreview)
 }
 
 fs::path gSettingsPath;

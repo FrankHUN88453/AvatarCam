@@ -1,3 +1,5 @@
+<img src="docs/icon.png" width="96" align="right" alt="AvatarCam icon">
+
 # AvatarCam – VRChat avatar virtual camera for OBS
 
 **English** | [Magyar](README.hu.md)
@@ -10,11 +12,21 @@ The interface is English by default. To switch to Hungarian: **Output → Progra
 
 ## Download and start
 
-Download the latest zip from the [Releases](../../releases) page, unpack it anywhere and run `AvatarCam.exe`.
-The `onnxruntime*.dll` files and the `models` folder next to it are needed for face and hand tracking.
+From the [Releases](../../releases) page, download either:
+
+- **`AvatarCam-<version>-setup.exe`** – installer (no admin rights needed): Start menu and desktop shortcuts, uninstaller.
+  Installing a newer version over the old one keeps your settings and avatars.
+- **`AvatarCam-<version>-win64.zip`** – portable version: unpack it anywhere and run `AvatarCam.exe`.
+
+The `onnxruntime*.dll` files and the `models` folder next to the exe are needed for face and hand tracking.
 Settings, imported avatars and presets are stored next to the exe.
 
+**Updates:** at startup AvatarCam checks GitHub for a newer version. If there is one, it shows what's new and lets you
+update now or later: *Update now* downloads the installer, verifies its checksum, installs it into the program's folder
+and restarts AvatarCam – your settings and avatars are kept. Turn it off under Output → Program → *Check for updates at startup*.
+
 Everything runs locally: the webcam and microphone are only processed on your computer, nothing is sent anywhere.
+The only network access is the update check on GitHub, which can be turned off.
 
 ## Importing an avatar
 
@@ -45,6 +57,8 @@ Adult add-on systems (DPS/TPS/SPS) are skipped by the importer.
   **global hotkeys** (they work while gaming too), UI scale, language.
 
 In the preview: left mouse = orbit, right/middle = pan, wheel = zoom, double-click = default view.
+
+Any value can be typed in: **double-click** a slider (or Ctrl+click), type the number and press Enter. Right-click resets a slider to its default.
 
 ## OBS setup
 
@@ -85,6 +99,9 @@ The Output → *Performance* section shows how much CPU and GPU the program uses
 - Look straight into the camera and press **Recenter**.
 - Blink and mouth detection calibrate themselves during the first 10–20 seconds.
 - For phone tracking (e.g. Waidayo), use the VMC receiver (default port: 39539).
+- Microphone lip sync: if the mouth barely moves, raise the **Gain** (up to 50x) or turn on **Automatic gain**, which adapts to your voice
+  and keeps the mouth closed on background noise. *Mouth opening* sets how wide it opens; on the level meter the white line
+  is the noise gate – your voice should go well past it.
 - For hand tracking, keep your hands in the camera's view and well lit. When a hand leaves the image, the arm
   smoothly returns to its rest pose. *Show camera image* shows what the program detects.
 - Hand mirroring can be set separately (Tracking → Hand tracking → *Mirror*): on, your right hand moves the avatar's left hand

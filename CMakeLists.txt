@@ -43,7 +43,7 @@ list(REMOVE_ITEM APP_SOURCES ${CMAKE_SOURCE_DIR}/src/thirdparty_impl.cpp)
 
 add_executable(AvatarCam WIN32 ${APP_SOURCES} src/app.rc)
 target_include_directories(AvatarCam PRIVATE src ${EXT}/onnxruntime/include)
-target_link_libraries(AvatarCam PRIVATE imgui thirdparty spout d3d11 dxgi d3dcompiler dwmapi ws2_32 winmm ole32 mfplat mf mfreadwrite mfuuid shlwapi comdlg32 shell32)
+target_link_libraries(AvatarCam PRIVATE imgui thirdparty spout d3d11 dxgi d3dcompiler dwmapi ws2_32 winmm ole32 mfplat mf mfreadwrite mfuuid shlwapi comdlg32 shell32 winhttp bcrypt)
 target_compile_definitions(AvatarCam PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN _CRT_SECURE_NO_WARNINGS)
 if(MSVC)
   target_compile_options(AvatarCam PRIVATE /utf-8 /W3 /permissive- /Zc:__cplusplus /MP /Zi)

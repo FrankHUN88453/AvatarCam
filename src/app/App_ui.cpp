@@ -34,12 +34,55 @@ void help(const char* text) {
     }
 }
 
-bool slider(const char* label, float* v, float lo, float hi, const char* fmt = "%.2f", float def = NAN) {
-    bool ch = ImGui::SliderFloat(label, v, lo, hi, fmt);
+// Dupla kattintás egy csúszkán: szöveges bevitel (mint a Ctrl+kattintás). A dupla kattintás első kattintása már
+// a kattintás helyére állította az értéket, ezt visszavonjuk.
+template <typename V>
+bool typeInOnDoubleClick(V* v, V before) {
+    static ImGuiID pressId = 0;
+    static V pressValue{};
+    ImGuiID id = ImGui::GetItemID();
+    if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+        bool restored = pressId == id;
+        if (restored) *v = pressValue;
+        pressId = 0;
+        ImGui::ClearActiveID();
+        ImGui::ActivateItemByID(id);
+        GImGui->NavNextActivateFlags = ImGuiActivateFlags_PreferInput;
+        return restored;
+    }
+    if (ImGui::IsItemActivated()) {
+        pressId = id;
+        pressValue = before;
+    }
+    return false;
+}
+
+void sliderHint(bool hasDefault) {
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay) && !ImGui::IsItemActive())
+        ImGui::SetTooltip("%s", hasDefault ? T("Double-click or Ctrl+click to type a value. Right-click: default.") : T("Double-click or Ctrl+click to type a value."));
+}
+
+bool slider(const char* label, float* v, float lo, float hi, const char* fmt = "%.2f", float def = NAN, ImGuiSliderFlags flags = 0) {
+    float before = *v;
+    bool ch = ImGui::SliderFloat(label, v, lo, hi, fmt, flags);
+    ch |= typeInOnDoubleClick(v, before);
     if (!std::isnan(def) && ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
         *v = def;
         ch = true;
     }
+    sliderHint(!std::isnan(def));
+    return ch;
+}
+
+bool sliderInt(const char* label, int* v, int lo, int hi, const char* fmt = "%d", int def = INT_MIN) {
+    int before = *v;
+    bool ch = ImGui::SliderInt(label, v, lo, hi, fmt);
+    ch |= typeInOnDoubleClick(v, before);
+    if (def != INT_MIN && ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+        *v = def;
+        ch = true;
+    }
+    sliderHint(def != INT_MIN);
     return ch;
 }
 
@@ -188,6 +231,7 @@ void App::drawUi() {
     ImGui::EndChild();
     ImGui::End();
     uiImportPopup();
+    uiUpdatePopup();
     if (showLog) {
         ImGui::SetNextWindowSize(ImVec2(700 * uiScale, 400 * uiScale), ImGuiCond_FirstUseEver);
         if (ImGui::Begin(T("Log"), &showLog)) {
@@ -389,7 +433,7 @@ void App::uiMenu(const json& menu, int depth) {
             if (!sp.empty()) {
                 float v = get(sp);
                 ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.55f);
-                if (ImGui::SliderFloat(("##r" + name).c_str(), &v, 0, 1, "%.2f")) {
+                if (slider(("##r" + name).c_str(), &v, 0, 1, "%.2f")) {
                     params[sp] = v;
                     if (!param.empty()) params[param] = value;
                 }
@@ -404,7 +448,7 @@ void App::uiMenu(const json& menu, int depth) {
                 std::string sp = c["subParameters"][k].get<std::string>();
                 if (sp.empty()) continue;
                 float v = get(sp);
-                if (ImGui::SliderFloat((sp + "##" + std::to_string(k)).c_str(), &v, type == "twoaxis" ? -1.0f : 0.0f, 1.0f)) params[sp] = v;
+                if (slider((sp + "##" + std::to_string(k)).c_str(), &v, type == "twoaxis" ? -1.0f : 0.0f, 1.0f)) params[sp] = v;
             }
             ImGui::Unindent();
         }
@@ -478,7 +522,7 @@ void App::uiAvatarTab() {
             for (auto* k : skip) hide |= ln == k;
             if (hide || e.binds.empty()) continue;
             float v = ex.count(e.name) ? ex[e.name] : 0.0f;
-            if (ImGui::SliderFloat(e.name.c_str(), &v, 0, 1, "%.2f")) ex[e.name] = v;
+            if (slider(e.name.c_str(), &v, 0, 1, "%.2f")) ex[e.name] = v;
             if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) ex.erase(e.name);
         }
         if (ImGui::SmallButton(T("Reset expressions"))) ex.clear();
@@ -502,7 +546,7 @@ void App::uiAvatarTab() {
                 int i = (int)v;
                 if (ImGui::InputInt(p.name.c_str(), &i)) params[p.name] = (float)std::clamp(i, 0, 255);
             } else {
-                if (ImGui::SliderFloat(p.name.c_str(), &v, -1, 1)) params[p.name] = v;
+                if (slider(p.name.c_str(), &v, -1, 1)) params[p.name] = v;
             }
             ImGui::PopID();
         }
@@ -605,7 +649,7 @@ void App::uiPartsTab() {
                     float v = m.weights[k];
                     bool has = ov.blendShapes.count(key) > 0;
                     if (has) ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.9f, 0.6f, 0.2f, 1));
-                    if (ImGui::SliderFloat((n + "##" + std::to_string(k)).c_str(), &v, 0, 1, "%.2f")) ov.blendShapes[key] = v;
+                    if (slider((n + "##" + std::to_string(k)).c_str(), &v, 0, 1, "%.2f")) ov.blendShapes[key] = v;
                     if (has) ImGui::PopStyleColor();
                     if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) ov.blendShapes.erase(key);
                 }
@@ -908,10 +952,35 @@ void App::uiTrackingTab() {
                 if (ImGui::Selectable(m.c_str(), t.micName == m)) t.micName = m;
             ImGui::EndCombo();
         }
-        slider(T("Gain"), &t.micGain, 0.1f, 8, "%.2f", 1);
+        ImGui::Checkbox(T("Automatic gain"), &t.micAutoGain);
+        help(T("Adapts to your voice automatically, so the mouth moves similarly whether you speak quietly or loudly. Background noise is not amplified. The gain below fine-tunes it."));
+        if (slider(T("Gain"), &t.micGain, 0.5f, 50, "%.1fx", 1, ImGuiSliderFlags_Logarithmic)) t.micGain = std::clamp(t.micGain, 0.1f, 100.0f);
+        help(T("Amplifies the microphone signal for lip sync. Raise it if the mouth barely moves while you talk."));
+        if (t.micAutoGain && tracking && t.micEnabled) {
+            ImGui::SameLine();
+            float g = tracking->micGain();
+            ImGui::TextDisabled(T("now %.1fx (%+.0f dB)"), g, 20.0f * std::log10(std::max(g, 1e-3f)));
+        }
+        slider(T("Mouth opening"), &t.micMouth, 0.2f, 2, "%.2fx", 1);
+        help(T("How wide the mouth opens for the same loudness."));
         slider(T("Noise gate"), &t.micThreshold, 0, 0.2f, "%.3f", 0.015f);
-        float lvl = tracking ? tracking->micLevel() : 0;
-        ImGui::ProgressBar(std::min(1.0f, lvl), ImVec2(-1, 6 * uiScale), "");
+        help(T("Sounds below this level don't move the mouth. The white line on the meter marks the gate: background noise should stay left of it, your voice should go well past it."));
+        {
+            // szintjelző: a mikrofon szintje erősítés után, a fehér vonal a zajküszöb
+            float lvl = tracking ? tracking->micLevel() : 0;
+            const float scale = 0.25f;
+            ImVec2 p = ImGui::GetCursorScreenPos();
+            float w = ImGui::GetContentRegionAvail().x, h = 8 * uiScale;
+            ImDrawList* dl = ImGui::GetWindowDrawList();
+            dl->AddRectFilled(p, ImVec2(p.x + w, p.y + h), IM_COL32(40, 44, 54, 255), 2);
+            float fill = std::min(1.0f, lvl / scale);
+            float gate = tracking && tracking->micGate() > 0 ? tracking->micGate() : t.micThreshold;
+            bool open = lvl > gate;
+            dl->AddRectFilled(p, ImVec2(p.x + w * fill, p.y + h), open ? IM_COL32(80, 210, 120, 255) : IM_COL32(110, 120, 140, 255), 2);
+            float gx = p.x + w * std::min(1.0f, gate / scale);
+            dl->AddLine(ImVec2(gx, p.y - 2), ImVec2(gx, p.y + h + 2), IM_COL32(255, 255, 255, 230), 2);
+            ImGui::Dummy(ImVec2(w, h + 2));
+        }
         ImGui::TextDisabled(T("Status: %s"), tracking ? tracking->micStatus().c_str() : "-");
     }
     if (ImGui::CollapsingHeader(T("External tracker (VMC protocol)"))) {
@@ -941,7 +1010,7 @@ void App::uiOutputTab() {
             o.width = std::clamp(wh[0], 64, 7680);
             o.height = std::clamp(wh[1], 64, 4320);
         }
-        ImGui::SliderInt(T("FPS limit"), &o.fpsLimit, 15, 144);
+        sliderInt(T("FPS limit"), &o.fpsLimit, 15, 144, "%d", 60);
         ImGui::Checkbox(T("Mirror##out"), &o.mirror);
         ImGui::Checkbox(T("Straight alpha"), &o.straightAlpha);
         help(T("For OBS's “Allow Transparency” mode, straight (non-premultiplied) alpha gives clean edges. If the edges look dark or bright, try turning it off."));
@@ -974,7 +1043,7 @@ void App::uiOutputTab() {
         if (tracking && (settings.tracking.faceEnabled || settings.tracking.handEnabled))
             ImGui::TextDisabled(T("Tracking per frame: face %.1f ms, hands %.1f ms"), tracking->faceMs(), tracking->handMs());
         ImGui::TextDisabled(T("Main thread: %.2f ms (avatar %.2f, render %.2f, UI %.2f)"), perf.frameMs, perf.cpu[kCpuAvatar] + perf.cpu[kCpuUpload], perf.cpu[kCpuRender], perf.cpu[kCpuUi] + perf.cpu[kCpuPresent]);
-        ImGui::SliderInt(T("UI FPS in background"), &o.uiIdleFps, 0, 60, o.uiIdleFps == 0 ? T("always full") : "%d");
+        sliderInt(T("UI FPS in background"), &o.uiIdleFps, 0, 60, o.uiIdleFps == 0 ? T("always full") : "%d", 15);
         help(T("When the AvatarCam window is not in the foreground (e.g. while gaming), the UI and preview refresh only this many times per second.\nOnly applies when you use the output window or Spout: the image going to OBS stays at full speed.\nWithout a separate output (OBS captures the main window), the main window always refreshes at full speed."));
         if (ImGui::Button(T("Power saving"))) {
             o.fpsLimit = 30;
@@ -1099,5 +1168,190 @@ void App::uiOutputTab() {
         ImGui::SameLine();
         if (ImGui::Button(T("Data folder"))) ShellExecuteW(nullptr, L"open", dataDir().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
         ImGui::TextDisabled("AvatarCam %s – Dear ImGui %s", AVATARCAM_VERSION, IMGUI_VERSION);
+        ImGui::Checkbox(T("Check for updates at startup"), &settings.checkUpdates);
+        ImGui::SameLine();
+        if (ImGui::SmallButton(T("Check now"))) {
+            updateManualCheck = true;
+            updater->checkAsync(0);
+        }
+        switch (updater->state()) {
+            case Updater::Checking: ImGui::TextDisabled("%s", T("Checking for updates…")); break;
+            case Updater::UpToDate: ImGui::TextDisabled("%s", T("You have the latest version.")); break;
+            case Updater::Available:
+            case Updater::Downloading:
+            case Updater::Downloaded:
+                ImGui::TextColored(ImVec4(0.4f, 0.9f, 0.6f, 1), T("Version %s is available."), updater->info().version.c_str());
+                ImGui::SameLine();
+                if (ImGui::SmallButton(T("Details"))) updatePopupWanted = true;
+                break;
+            case Updater::Failed: ImGui::TextDisabled(T("Update check failed: %s"), updater->error().c_str()); break;
+            default: break;
+        }
     }
+}
+
+// ===========================================================================
+namespace {
+// A kiadási megjegyzés (markdown) egyszerű megjelenítése: címsorok, felsorolás, félkövér/kód/hivatkozás jelölés nélkül
+void renderNotes(const std::string& md) {
+    size_t pos = 0;
+    while (pos <= md.size()) {
+        size_t nl = md.find('\n', pos);
+        std::string line = md.substr(pos, nl == std::string::npos ? std::string::npos : nl - pos);
+        pos = nl == std::string::npos ? md.size() + 1 : nl + 1;
+        while (!line.empty() && (line.back() == '\r' || line.back() == ' ')) line.pop_back();
+        // inline jelölések
+        std::string t;
+        for (size_t i = 0; i < line.size(); i++) {
+            if (line.compare(i, 2, "**") == 0) {
+                i++;
+                continue;
+            }
+            if (line[i] == '`') continue;
+            if (line[i] == '[') {
+                size_t close = line.find("](", i);
+                size_t end = close == std::string::npos ? std::string::npos : line.find(')', close);
+                if (end != std::string::npos) {
+                    t += line.substr(i + 1, close - i - 1);
+                    i = end;
+                    continue;
+                }
+            }
+            t += line[i];
+        }
+        std::string s = trim(t);
+        if (s.empty()) {
+            ImGui::Spacing();
+        } else if (s == "---") {
+            ImGui::Separator();
+        } else if (s[0] == '#') {
+            size_t k = s.find_first_not_of("# ");
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.35f, 0.85f, 1.0f, 1));
+            ImGui::TextWrapped("%s", k == std::string::npos ? "" : s.c_str() + k);
+            ImGui::PopStyleColor();
+        } else if (s.size() > 1 && (s[0] == '-' || s[0] == '*') && s[1] == ' ') {
+            ImGui::Bullet();
+            ImGui::TextWrapped("%s", s.c_str() + 2);
+        } else {
+            ImGui::TextWrapped("%s", s.c_str());
+        }
+    }
+}
+}  // namespace
+
+void App::uiUpdatePopup() {
+    Updater::State st = updater->state();
+    const char* popupId = "###update";
+    if (st == Updater::Available && !updateInstalling) {
+        static bool shownOnce = false;
+        std::string v = updater->info().version;
+        // automatikusan egyszer jelenik meg (kihagyott verziónál csak kézi keresésre)
+        if (!shownOnce && (v != settings.skippedVersion || updateManualCheck)) updatePopupWanted = true;
+        shownOnce = true;
+    }
+    if (st == Updater::UpToDate || st == Updater::Failed) updateManualCheck = false;
+    if (updatePopupWanted) {
+        ImGui::OpenPopup(popupId);
+        updatePopupWanted = false;
+    }
+    ImGui::SetNextWindowSize(ImVec2(600 * uiScale, 0), ImGuiCond_Appearing);
+    std::string title = std::string(T("Update available")) + popupId;
+    if (!ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_NoSavedSettings)) return;
+    UpdateInfo ui = updater->info();
+    ImGui::Text(T("AvatarCam %s is available. You have version %s."), ui.version.c_str(), Updater::currentVersion().c_str());
+    ImGui::SeparatorText(T("What's new"));
+    ImGui::BeginChild("notes", ImVec2(0, 240 * uiScale), ImGuiChildFlags_Borders);
+    std::string notes = releaseNotesForLanguage(ui.notes, language() == kLangHungarian);
+    if (notes.empty()) ImGui::TextDisabled("%s", T("(no description)"));
+    else renderNotes(notes);
+    ImGui::EndChild();
+    ImGui::Spacing();
+    if (updateInstalling) {
+        ImGui::TextWrapped("%s", T("Installing the update… AvatarCam closes now and restarts when the installation is done."));
+    } else if (st == Updater::Downloading) {
+        float p = updater->progress();
+        ImGui::ProgressBar(p, ImVec2(-1, 0), format(T("Downloading… %.0f%%"), p * 100).c_str());
+        if (ImGui::Button(T("Cancel"))) updater->cancelDownload();
+    } else if (st == Updater::Downloaded) {
+        if (updater->launchInstaller(language() == kLangHungarian)) {
+            updateInstalling = true;
+            PostMessageW(hwnd, WM_CLOSE, 0, 0);
+        }
+    } else {
+        if (st == Updater::Failed && !updater->error().empty())
+            ImGui::TextColored(ImVec4(1, 0.45f, 0.45f, 1), T("Update failed: %s"), updater->error().c_str());
+        bool canInstall = !ui.assetUrl.empty();
+        if (canInstall) {
+            if (ImGui::Button(T("Update now"))) updater->downloadAsync();
+            ImGui::SetItemTooltip("%s", T("Downloads and installs the update, then restarts AvatarCam. Your settings and avatars are kept."));
+        } else {
+            if (ImGui::Button(T("Open download page"))) ShellExecuteW(nullptr, L"open", widen(ui.pageUrl).c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button(T("Later"))) ImGui::CloseCurrentPopup();
+        ImGui::SameLine(ImGui::GetContentRegionAvail().x + ImGui::GetCursorPosX() - ImGui::CalcTextSize(T("Skip this version")).x - ImGui::GetStyle().FramePadding.x * 2);
+        if (ImGui::SmallButton(T("Skip this version"))) {
+            settings.skippedVersion = ui.version;
+            ImGui::CloseCurrentPopup();
+        }
+        if (canInstall && st == Updater::Failed) {
+            if (ImGui::SmallButton(T("Open download page"))) ShellExecuteW(nullptr, L"open", widen(ui.pageUrl).c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+        }
+    }
+    ImGui::EndPopup();
+}
+
+// ===========================================================================
+// Önteszt (AvatarCam.exe --ui-selftest): fej nélküli ImGui környezetben szimulált egérrel ellenőrzi, hogy a
+// csúszkára dupla kattintva szöveges bevitel nyílik, és az érték nem ugrik el.
+int uiSelfTest() {
+    ImGuiContext* prev = ImGui::GetCurrentContext();
+    ImGuiContext* ctx = ImGui::CreateContext();
+    ImGui::SetCurrentContext(ctx);
+    ImGuiIO& io = ImGui::GetIO();
+    io.BackendFlags |= ImGuiBackendFlags_RendererHasTextures;
+    io.DisplaySize = ImVec2(800, 600);
+    io.DeltaTime = 1.0f / 60;
+    io.IniFilename = nullptr;
+    float v = 72;
+    ImVec2 rmin, rmax;
+    ImGuiID sid = 0;
+    auto frame = [&](ImVec2 pos, int button) {
+        io.AddMousePosEvent(pos.x, pos.y);
+        if (button >= 0) io.AddMouseButtonEvent(0, button == 1);
+        ImGui::NewFrame();
+        ImGui::SetNextWindowPos(ImVec2(0, 0));
+        ImGui::SetNextWindowSize(ImVec2(500, 200));
+        ImGui::Begin("selftest");
+        slider("Arms down", &v, 0, 90, "%.0f", 72);
+        sid = ImGui::GetItemID();
+        rmin = ImGui::GetItemRectMin();
+        rmax = ImGui::GetItemRectMax();
+        ImGui::End();
+        ImGui::Render();
+    };
+    frame(ImVec2(-100, -100), -1);
+    ImVec2 at(rmin.x + 25, (rmin.y + rmax.y) * 0.5f);
+    frame(at, -1);
+    frame(at, 1);  // első kattintás
+    frame(at, 0);
+    frame(at, 1);  // második kattintás (dupla)
+    frame(at, 0);
+    for (int i = 0; i < 4; i++) frame(at, -1);
+    ImGuiContext& g = *GImGui;
+    bool typing = g.ActiveId == sid && g.TempInputId == sid;
+    float after = v;
+    // gépelés: "45" + Enter
+    io.AddInputCharactersUTF8("45");
+    frame(at, -1);
+    io.AddKeyEvent(ImGuiKey_Enter, true);
+    frame(at, -1);
+    io.AddKeyEvent(ImGuiKey_Enter, false);
+    frame(at, -1);
+    frame(at, -1);
+    float typed = v;
+    ImGui::DestroyContext(ctx);
+    ImGui::SetCurrentContext(prev);
+    printf("double-click -> text input: %s, value after double-click: %.1f (expected 72), after typing 45+Enter: %.1f\n", typing ? "YES" : "NO", after, typed);
+    return typing && std::fabs(after - 72) < 0.01f && std::fabs(typed - 45) < 0.01f ? 0 : 1;
 }

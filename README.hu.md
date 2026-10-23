@@ -1,3 +1,5 @@
+<img src="docs/icon.png" width="96" align="right" alt="AvatarCam ikon">
+
 # AvatarCam – VRChat avatár virtuális kamera OBS-hez
 
 [English](README.md) | **Magyar**
@@ -10,11 +12,22 @@ A program felülete alapból angol. Magyarra váltás: **Output → Program → 
 
 ## Letöltés és indítás
 
-Töltsd le a legújabb zipet a [Releases](../../releases) oldalról, csomagold ki bárhová, és indítsd az `AvatarCam.exe`-t.
-A mellette lévő `onnxruntime*.dll` fájlok és a `models` mappa az arc- és kézkövetéshez kellenek.
+A [Releases](../../releases) oldalról töltsd le az egyiket:
+
+- **`AvatarCam-<verzió>-setup.exe`** – telepítő (nem kell hozzá rendszergazdai jog): Start menü és asztali parancsikon, eltávolító.
+  Ha az új verziót a régire telepíted, a beállításaid és az avatárjaid megmaradnak. Magyar telepítésnél a program is magyarul indul.
+- **`AvatarCam-<verzió>-win64.zip`** – hordozható változat: csomagold ki bárhová, és indítsd az `AvatarCam.exe`-t.
+
+Az exe melletti `onnxruntime*.dll` fájlok és a `models` mappa az arc- és kézkövetéshez kellenek.
 A beállítások, az importált avatárok és az előbeállítások az exe mellé kerülnek.
 
+**Frissítés:** indításkor az AvatarCam megnézi a GitHubon, van-e új verzió. Ha van, kiírja, mit tartalmaz, és választhatsz:
+frissítesz most vagy később. A *Frissítés most* letölti a telepítőt, ellenőrzi az ellenőrzőösszegét, a program mappájába telepíti,
+és újraindítja az AvatarCamet – a beállításaid és az avatárjaid megmaradnak. Kikapcsolható: Kimenet → Program →
+*Frissítés keresése indításkor*.
+
 Minden helyben fut: a webkamera és a mikrofon képét/hangját csak a gépeden dolgozza fel, semmit nem küld el sehová.
+Az egyetlen hálózati kapcsolat a frissítés keresése a GitHubon, ami kikapcsolható.
 
 ## Avatár importálása
 
@@ -45,6 +58,8 @@ A felnőtt tartalmú kiegészítő-rendszereket (DPS/TPS/SPS) az importáló kih
   **globális gyorsbillentyűk** (játék közben is működnek), felület mérete, nyelv.
 
 Az előnézetben: bal egérgomb = forgatás, jobb/középső = mozgatás, görgő = nagyítás, dupla kattintás = alap nézet.
+
+Minden érték be is írható: **kattints duplán** egy csúszkára (vagy Ctrl+kattintás), írd be a számot, és nyomj Entert. Jobb klikk: alapérték.
 
 ## OBS beállítása
 
@@ -85,6 +100,9 @@ A Kimenet → *Teljesítmény* rész mutatja, mennyi processzort és videókárt
 - Nézz egyenesen a kamerába, és nyomd meg a **Középre állítás** gombot.
 - A pislogás és a száj az első 10–20 másodpercben önmagát kalibrálja.
 - Telefonos követéshez (pl. Waidayo) használd a VMC fogadást (alapport: 39539).
+- Mikrofonos szájmozgás: ha alig mozdul a száj, növeld az **Erősítés**t (akár 50x), vagy kapcsold be az **Automatikus erősítés**t,
+  ami a hangodhoz igazodik, és háttérzajnál zárva tartja a szájat. A *Szájnyitás mértéke* azt állítja, mennyire nyíljon ki;
+  a szintjelzőn a fehér vonal a küszöb – a hangod jóval menjen túl rajta.
 - Kézkövetéshez a kezed legyen a kamera látóterében, jól megvilágítva. Ha a kéz eltűnik a képről,
   a kar lágyan visszaereszkedik az alaptartásba. A *Kamera kép mutatása* opcióval látod, mit érzékel a program.
 - A kezek tükrözése külön állítható (Követés → Kézkövetés → *Tükrözés*): bekapcsolva a jobb kezed az avatár bal kezét

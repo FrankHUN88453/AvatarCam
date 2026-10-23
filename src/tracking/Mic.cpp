@@ -128,6 +128,7 @@ void MicLipSync::loop(std::string name) {
     size_t winLen = (size_t)(rate * 0.02f);
     float lp = 0, prevS = 0;
     float sm[15] = {};
+    float noise = -1, peak = 0;  // automatikus erősítéshez: zajszint és a beszéd csúcsszintje
     while (!stop_) {
         Sleep(5);
         UINT32 packet = 0;
@@ -167,11 +168,29 @@ void MicLipSync::loop(std::string name) {
                 prevS = s;
             }
             win.erase(win.begin(), win.begin() + winLen);
-            float rms = (float)std::sqrt(e / winLen) * gain_;
+            float r = (float)std::sqrt(e / winLen);
+            // zajszint: gyorsan követi lefelé, lassan felfelé
+            if (noise < 0) noise = r;
+            noise += (r - noise) * (r < noise ? 0.5f : 0.002f);
+            float g = gain_;
+            float gate = threshold_;
+            if (autoGain_) {
+                // a beszéd csúcsszintjét követjük (kb. 10 mp alatt feleződik), és a zaj feletti tartományát erősítjük
+                // akkorára, hogy a hangos szótagok majdnem teljesen nyissák a szájat. A küszöb legalább a felerősített
+                // zajszint 1,8-szorosa, így csendben a száj zárva marad.
+                if (r > noise * 3.0f + 1e-4f && r > peak) peak += (r - peak) * 0.5f;
+                peak *= 0.9986f;
+                float usable = std::max(peak - 1.8f * noise, std::max(noise * 3.0f, 0.0015f));
+                g *= std::clamp((threshold_ + 0.09f) / usable, 0.2f, 50.0f);
+                gate = std::max(gate, noise * g * 1.8f);
+            }
+            effGain_ = g;
+            gate_ = gate;
+            float rms = r * g;
             raw_ = rms;
             float zcr = (float)zc / winLen;
             float lowRatio = e > 1e-12 ? (float)(eLow / e) : 0;
-            float level = saturate((rms - threshold_) * 9.0f);
+            float level = std::min(1.0f, saturate((rms - gate) * 9.0f) * mouth_);
             float tgt[15] = {};
             if (level > 0.01f) {
                 if (zcr > 0.25f && lowRatio < 0.15f) {

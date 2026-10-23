@@ -50,7 +50,9 @@ public:
     float handMs() const;  // kézkövetés ideje képkockánként (ms)
     std::string micStatus() const;
     std::string vmcStatus() const;
-    float micLevel() const;
+    float micLevel() const;  // a mikrofon szintje erősítés után (RMS)
+    float micGain() const;   // a ténylegesen használt erősítés
+    float micGate() const;   // a ténylegesen használt küszöb
     ID3D11ShaderResourceView* cameraPreview(Gfx& gfx);  // a kamera képe (opcionális)
     void recenter();  // a jelenlegi fejtartás legyen az alap
 

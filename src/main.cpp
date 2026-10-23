@@ -92,6 +92,28 @@ int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE, PWSTR, int) {
         fclose(out);
         return 0;
     }
+    // a frissítés tesztje a felület nélkül: AvatarCam.exe --update-test [install]
+    // (keresés -> letöltés -> ellenőrzőösszeg; "install" esetén a telepítő indítása az exe mappájába)
+    if (argc >= 2 && std::wstring(argv[1]) == L"--update-test") {
+        Updater* u = new Updater;  // szándékosan nem töröljük (lásd Updater::shutdown)
+        u->checkAsync(0);
+        while (u->state() == Updater::Checking) Sleep(50);
+        UpdateInfo ui = u->info();
+        printf("running %s, latest %s, state %d, installer %s, sha256 %s\n", Updater::currentVersion().c_str(), ui.version.c_str(), (int)u->state(),
+               ui.assetName.c_str(), ui.sha256.empty() ? "-" : ui.sha256.c_str());
+        if (u->state() != Updater::Available || ui.assetUrl.empty()) return u->state() == Updater::UpToDate ? 0 : 2;
+        u->downloadAsync();
+        while (u->state() == Updater::Downloading) Sleep(100);
+        printf("download: state %d %s\n", (int)u->state(), u->error().c_str());
+        if (u->state() != Updater::Downloaded) return 3;
+        if (argc >= 3 && std::wstring(argv[2]) == L"install") return u->launchInstaller(false) ? 0 : 4;
+        return 0;
+    }
+    // a felület önteszte (dupla kattintásos értékbevitel): AvatarCam.exe --ui-selftest
+    if (argc >= 2 && std::wstring(argv[1]) == L"--ui-selftest") {
+        extern int uiSelfTest();
+        return uiSelfTest();
+    }
     // Kézkövetés teszt egy képen: AvatarCam.exe --hand-test <kép> <kimenet.png> <napló.txt>
     if (argc >= 5 && std::wstring(argv[1]) == L"--hand-test") {
         FILE* out = nullptr;
